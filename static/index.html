@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#00add8">
+  <link rel="stylesheet" href="style.css">
+  <script src="jquery.js"></script>
+  <title>Lox Playground</title>
+</head>
+<body class="Site">
+
+<header class="Site-header js-siteHeader">
+  <div class="Header Header--dark">
+    <nav class="Header-nav">
+      <div class="Header-rightContent">
+        <ul class="Header-menu">
+          <li class="Header-menuItem  Header-menuItem--active">
+            <a href="/">Play</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="NavigationDrawer-scrim js-scrim" role="presentation"></div>
+<main class="SiteContent SiteContent--default">
+  <div class="PlayPage">
+    <div class="Playground-controls">
+      <h1 class="Playground-title">The Lox Playground</h1>
+      <div class="Playground-buttons">
+        <select class="Playground-selectGoVersion js-playgroundVersionEl" aria-label="Go version">
+          <option value="">Lox 0.1</option>
+        </select>
+        <button id="run" class="Button Button--primary js-playgroundRunEl Playground-runButton" title="Run this code [shift-enter]">Run</button>
+        <select id="select" class="Playground-selectExample js-playgroundToysEl" aria-label="Code examples">
+          <option value="hello">hello</option>
+          <option value="type">type</option>
+          <option value="operation">operation</option>
+          <option value="control flow">control flow</option>
+          <option value="function">function</option>
+          <option value="fibonacci">fibonacci</option>
+        </select>
+      </div>
+    </div>
+    <div class="Playground-inputContainer">
+      <div id="wrap">
+    <textarea id="code" name="code" class="Playground-input js-playgroundCodeEl" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Try Go">// You can edit this code!
+// Click here and start typing.
+
+print "Hello, World!";</textarea>
+      </div>
+    </div>
+    <div id="result" class="Playground-outputContainer js-playgroundOutputEl">
+    </div>
+  </div>
+</main>
+
+</body>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    var map = {};
+    map["hello"] = "// You can edit this code!\n" +
+            "// Click here and start typing.\n" +
+            "\n" +
+            "print \"Hello, World!\";";
+
+    map["type"] = "// Boolean\n" +
+            "print true;             // Not false.\n" +
+            "print false;            // Not not false.\n" +
+            "\n" +
+            "// Number\n" +
+            "print 1234;             // An integer.\n" +
+            "print 12.34;            // A decimal number.\n" +
+            "\n" +
+            "// String\n" +
+            "print \"I am a string\";\n" +
+            "print \"\";               // The empty string.\n" +
+            "print \"123\";            // This is a string, not a number.\n" +
+            "\n" +
+            "// Nil\n" +
+            "print nil;";
+
+    map["operation"] = "// Comparison and equality\n" +
+            "print 1 == 2;           // false.\n" +
+            "print \"cat\" != \"dog\";   // true.\n" +
+            "\n" +
+            "print 314 == \"pi\";      // false.\n" +
+            "print 123 == \"123\";     // false.\n" +
+            "\n" +
+            "print !true;            // false.\n" +
+            "print !false;           // true.\n" +
+            "\n" +
+            "// Logical operators\n" +
+            "print true and false;   // false.\n" +
+            "print true and true;    // true.\n" +
+            "print false or false;   // false.\n" +
+            "print true or false;    // true.\n" +
+            "\n" +
+            "// Precedence and grouping\n" +
+            "print (1 + 2) / 2;      // 1.5"
+
+    map["control flow"] = "// Control Flow\n" +
+            "var condition = true;\n" +
+            "if (condition) {\n" +
+            "  print \"yes\";          // \"yes\"\n" +
+            "} else {\n" +
+            "  print \"no\";\n" +
+            "}\n" +
+            "\n" +
+            "var a = 1;\n" +
+            "while (a < 10) {\n" +
+            "  print a;\n" +
+            "  a = a + 1;\n" +
+            "}\n" +
+            "\n" +
+            "for (var a = 1; a < 10; a = a + 1) {\n" +
+            "  print a;\n" +
+            "}"
+
+    map["function"] = "// Functions\n" +
+            "fun sum(a, b) {\n" +
+            "  return a + b;\n" +
+            "}\n" +
+            "\n" +
+            "print sum(1, 2);"
+
+    map["fibonacci"] = "fun fib(n) {\n" +
+            "  if (n <= 1) return n;\n" +
+            "  return fib(n - 2) + fib(n - 1);\n" +
+            "}\n" +
+            "\n" +
+            "for (var i = 0; i < 20; i = i + 1) {\n" +
+            "  print fib(i);\n" +
+            "}";
+
+    $("#select").change(function() {
+      const opt = $(this).val();
+      $("#code").text(map[opt]);
+    });
+
+    $("#run").click(function(){
+      const json = { code: $("#code").val() };
+      $.ajax({
+        type: "post",
+        url: "/run",
+        contentType: "application/json;charset=utf-8",
+        data: JSON.stringify(json),
+        success: function (res) {
+          console.log(res["result"].toString())
+          $("#result").val(res["result"]);
+        },
+        error: function () {
+          alert("An unknown error occurred on the remote server");
+        }
+      });
+    });
+  });
+</script>
+</html>
