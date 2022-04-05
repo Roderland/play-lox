@@ -153,8 +153,9 @@ print "Hello, World!";</textarea>
           console.log(res["result"].toString())
           $("#result").text(res["result"]);
         },
-        error: function () {
-          alert("An unknown error occurred on the remote server");
+        error: function (res) {
+          console.log(res["result"].toString())
+          $("#result").text(res["result"]);
         }
       });
     });

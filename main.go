@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"os"
 	"plugin"
-	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
-var lock sync.Mutex
 
 func main() {
 	if len(os.Args) != 2 {
@@ -20,12 +18,52 @@ func main() {
 		os.Exit(64)
 	}
 
-	play, buffer := loadPlugin(os.Args[1])
-
-	r := playground(play, buffer)
+	r := playground()
 
 	// Listen and Server in 0.0.0.0:8080
 	_ = r.Run(":8080")
+}
+
+func playground() *gin.Engine {
+	r := gin.Default()
+
+	r.StaticFile("/", "./static/index.html")
+	r.StaticFile("/index", "./static/index.html")
+	r.StaticFile("/index.html", "./static/index.html")
+	r.StaticFile("/style.css", "./static/style.css")
+	r.StaticFile("/jquery.js", "./static/jquery.js")
+
+	r.POST("/run", func(c *gin.Context) {
+		req := &struct {
+			Code string `json:"code"`
+		}{}
+
+		if err := c.BindJSON(req); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{})
+		}
+
+		pipe := make(chan string, 1)
+		defer close(pipe)
+		go do(req.Code, pipe)
+
+		select {
+		case <-time.After(3 * time.Second):
+			c.JSON(http.StatusOK, gin.H{"result": "拒绝执行非法代码"})
+		case result := <-pipe:
+			c.JSON(http.StatusOK, gin.H{"result": result})
+		}
+
+	})
+
+	return r
+}
+
+func do(code string, pipe chan string) {
+	play, buffer := loadPlugin(os.Args[1])
+	go func(code string, pipe chan string) {
+		play(code)
+		pipe <- buffer.String()
+	}(code, pipe)
 }
 
 //
@@ -48,33 +86,4 @@ func loadPlugin(filename string) (func(string), *bytes.Buffer) {
 	buf := xbuf.(*bytes.Buffer)
 
 	return play, buf
-}
-
-func playground(play func(string), buffer *bytes.Buffer) *gin.Engine {
-	r := gin.Default()
-
-	r.StaticFile("/", "./static/index.html")
-	r.StaticFile("/index", "./static/index.html")
-	r.StaticFile("/index.html", "./static/index.html")
-	r.StaticFile("/style.css", "./static/style.css")
-	r.StaticFile("/jquery.js", "./static/jquery.js")
-
-	r.POST("/run", func(c *gin.Context) {
-		req := &struct {
-			Code string `json:"code"`
-		}{}
-
-		if err := c.BindJSON(req); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{})
-		}
-
-		lock.Lock()
-		play(req.Code)
-		result := buffer.String()
-		lock.Unlock()
-
-		c.JSON(http.StatusOK, gin.H{"result": result})
-	})
-
-	return r
 }
