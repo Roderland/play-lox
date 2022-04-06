@@ -43,7 +43,6 @@ func playground() *gin.Engine {
 		}
 
 		pipe := make(chan string, 1)
-		defer close(pipe)
 		go do(req.Code, pipe)
 
 		select {
@@ -63,6 +62,7 @@ func do(code string, pipe chan string) {
 	go func(code string, pipe chan string) {
 		play(code)
 		pipe <- buffer.String()
+		close(pipe)
 	}(code, pipe)
 }
 
