@@ -24,6 +24,7 @@ func main() {
 	_ = r.Run(":8080")
 }
 
+// playground
 func playground() *gin.Engine {
 	r := gin.Default()
 
